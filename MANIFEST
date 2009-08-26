@@ -1,0 +1,14 @@
+Build.PL
+lib/NetSDS/Const/Message.pm
+lib/NetSDS/Message.pm
+lib/NetSDS/Message/SMS.pm
+lib/NetSDS/Util/SMS.pm
+Makefile.PL
+MANIFEST			This list of files
+META.yml
+NetSDS-Message-0.01.tar.gz
+samples/simple.pl
+t/01_load.t
+t/02_pod.t
+t/03_pod_coverage.t
+README
