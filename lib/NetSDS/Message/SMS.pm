@@ -7,7 +7,6 @@
 #        NOTES:  ---
 #       AUTHOR:  Michael Bochkaryov (Rattler), <misha@rattler.kiev.ua>
 #      COMPANY:  Net.Style
-#      VERSION:  1.0
 #      CREATED:  14.08.2008 15:43:06 EEST
 #===============================================================================
 
@@ -41,13 +40,18 @@ use 5.8.0;
 use strict;
 use warnings;
 
-use base qw(NetSDS::Message);
+use base qw(NetSDS::Message Exporter);
 
-use version; our $VERSION = '0.001';
+use version; our $VERSION = '0.021';
 
 use NetSDS::Util::Convert;     # Data conversion routines
 use NetSDS::Util::String;      # String processing routines
+use NetSDS::Util::SMS;         # SMS related data processing
 use NetSDS::Const::Message;    # Messaging related constants
+
+our @EXPORT = qw(
+  create_long_sm
+);
 
 #===============================================================================
 
@@ -84,6 +88,11 @@ sub new {
 		format => 'sms',             # Generic SMS data
 		%params,
 	);
+
+	# Set SMS coding
+	if ( defined $params{coding} ) {
+		$this->coding( $params{coding} );
+	}
 
 	return $this;
 
@@ -159,7 +168,7 @@ Paramters: UDH as binary string
 
 Returns: UDH
 
-	$msg->udh(conv_hex_str('050102030405');
+	$msg->udh(conv_hex_str('050.02130405');
 
 =cut 
 
@@ -169,7 +178,9 @@ sub udh {
 
 	my ( $this, $udh ) = @_;
 
-	if ( defined $udh ) {
+	if ($udh) {
+
+		$this->header( 'udhi', 1 );
 
 		# Retrieve UDH length in bytes (1st
 		my ($udhl) = unpack( "C*", bytes::substr( $udh, 0, 1 ) );
@@ -294,7 +305,87 @@ sub message_body {
 
 	my ($this) = @_;
 
-	return $this->udh . $this->ud;
+	return $this->udh ? $this->udh . $this->ud : $this->ud;
+}
+
+#***********************************************************************
+
+=item B<text($string, $coding)> - set SM data from text string
+
+Paramters: string, SMS coding
+
+	# Set SMS text
+	$msg->text('Just some string', COD_7BIT);
+
+This will set UDH to undef and UD to string in GSM 03.38.
+
+=cut 
+
+#-----------------------------------------------------------------------
+
+sub text {
+
+	my ( $self, $str, $coding ) = @_;
+	$str = str_decode($str);
+
+	$self->coding($coding);
+	$self->{body}->{udh} = undef;    # only short text SMS
+
+	# Convert UTF-8 string to proper encoding
+	if ( $coding == COD_7BIT ) {
+		$self->ud( str_recode( $str, 'UTF-8', 'GSM0338' ) );
+	} elsif ( $coding == COD_UCS2 ) {
+		$self->ud( str_recode( $str, 'UTF-8', 'UCS-2BE' ) );
+	} else {
+		return $self->error('Unknown encoding for text SM');
+	}
+
+	return $self->ud();
+
+} ## end sub text
+
+
+#***********************************************************************
+
+=back
+
+=head1 EXPORTED FUNCTIONS
+
+=over
+
+=item B<create_long_sm($text, $coding)> - concatenated SMS sequence
+
+Paramters: text string (UTF-8), SMS coding
+
+Returns: array of NetSDS::Message::SMS objects
+
+	# Create 300 character string
+	my $long_str = 'abc'x100;
+
+	my @parts = create_long_sm($long_str, COD_7BIT);
+
+=cut 
+
+#-----------------------------------------------------------------------
+
+sub create_long_sm {
+
+	my ( $str, $coding ) = @_;
+
+	# Parse string
+	my @parts = NetSDS::Util::SMS::split_text( $str, $coding );
+
+	# Create array of SMS objects
+	my @res = ();
+	foreach my $part (@parts) {
+		my $msg = NetSDS::Message::SMS->new(
+			coding => $coding,
+		);
+		$msg->udh( $part->{udh} );
+		$msg->ud( $part->{ud} );
+		push @res, $msg;
+	}
+	return @res;
 }
 
 1;
@@ -328,6 +419,24 @@ Unknown yet
 =head1 AUTHOR
 
 Michael Bochkaryov <misha@rattler.kiev.ua>
+
+=head1 LICENSE
+
+Copyright (C) 2008 Michael Bochkaryov
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 =cut
 

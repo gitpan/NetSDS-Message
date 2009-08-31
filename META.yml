@@ -1,6 +1,6 @@
 ---
 name: NetSDS-Message
-version: 0.01
+version: 0.021
 author:
   - 'Michael Bochkaryov <misha@rattler.kiev.ua>'
 abstract: 'Messages (SMS, MMS, etc) processing libraries for NetSDS'
@@ -22,16 +22,16 @@ build_requires:
 provides:
   NetSDS::Const::Message:
     file: lib/NetSDS/Const/Message.pm
-    version: 0.001
+    version: 0.021
   NetSDS::Message:
     file: lib/NetSDS/Message.pm
-    version: 0.01
+    version: 0.021
   NetSDS::Message::SMS:
     file: lib/NetSDS/Message/SMS.pm
-    version: 0.001
+    version: 0.021
   NetSDS::Util::SMS:
     file: lib/NetSDS/Util/SMS.pm
-    version: 0.001
+    version: 0.021
 generated_by: Module::Build version 0.2808
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

@@ -50,6 +50,15 @@ my $jmsg = $j->encode( $msg->unbless() );
 #print $jmsg;
 
 my $new = bless $j->decode($jmsg), 'NetSDS::Message::SMS';
-print Dumper($new);
+#print Dumper($new);
 print $new->dcs();
+
+$msg->text('Welcome', 2);
+print Dumper($msg);
+print conv_str_hex($msg->ud());
+
+my @sp = create_long_sm('zuka'x50, 0);
+
+print Dumper(\@sp);
+print conv_str_hex($sp[0]->udh);
 1;
